@@ -241,7 +241,7 @@ def main(pdf_path, excel_filename):
 
 if __name__ == "__main__":
     
-    pdf_path = "input folder/Completed Dispute Form 3.pdf (2).pdf"  
-    excel_filename = "output folder/extracted_data_form3.xlsx"  
+    pdf_path = "PDF_Form_Reader\PDF_Reader/input folder/Completed Dispute Form 3.pdf (2).pdf"  
+    excel_filename = "PDF_Form_Reader\PDF_Reader\output folder\extracted_data_form3.xlsx"  
     extracted_data = main(pdf_path, excel_filename)
     print(f"Extracted Data:\n{extracted_data}")
