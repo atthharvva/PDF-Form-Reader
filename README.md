@@ -81,7 +81,7 @@ If the form has additional pages or layouts:
 2. **Text and Checkbox Extraction**
    - Extracts text using Tesseract OCR.
    - Detects and processes checkboxes based on contours and fills.
-   ![Checkbox Extraction Example]PDF_Form_Reader\PDF_Reader\images\checkbox_recognition.png
+   ![Checkbox Extraction Example](images/checkbox_recognition.png)
 3. **Field Matching**
    - Matches extracted data against predefined fields and mappings.
 4. **Output to Excel**
