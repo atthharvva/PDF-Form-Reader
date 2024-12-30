@@ -19,7 +19,7 @@ This Python script extracts information from PDF forms using OCR (Optical Charac
 ### Python Libraries
 Install the required libraries by running:
 ```bash
-pip install numpy opencv-python pytesseract PyMuPDF==1.20.2 pillow pandas
+pip install numpy opencv-python pytesseract PyMuPDF==1.20.2 pillow pandas openpyxl
 ```
 
 ### Tesseract OCR
