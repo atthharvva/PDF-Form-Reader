@@ -38,7 +38,7 @@ def detect_checkboxes_with_text(pdf_path):
                 x, y, w, h = cv2.boundingRect(contour)
 
                 
-                if 30 < w < 60 and 30 < h < 60:  
+                if 27 < w < 63 and 27 < h < 63:  
                     
                     checkbox_region = binary[y:y+h, x:x+w]
 
@@ -48,7 +48,7 @@ def detect_checkboxes_with_text(pdf_path):
                     fill_ratio = non_zero_pixels / total_pixels
 
                     
-                    state = "Checked" if fill_ratio > 0.3 else "Unchecked"
+                    state = "Checked" if fill_ratio > 0.39 else "Unchecked"
 
                     
                     checkboxes.append((x, y, w, h, state))
@@ -77,7 +77,7 @@ def detect_checkboxes_with_text(pdf_path):
             cv2.destroyAllWindows()
 
 
-pdf_path = "PDF_Form_Reader/PDF_Reader/input folder/Completed Dispute Form 3.pdf (2).pdf"  
+pdf_path = "PDF_Form_Reader\PDF_Reader\input folder\Completed Dispute Form 3.pdf (2).pdf"  
 detect_checkboxes_with_text(pdf_path)
 
 

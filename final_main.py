@@ -21,12 +21,12 @@ FIELDS = {
 }
 
 field_mappings = {
-    "Name": ["Yourname —", "Yourname _ ", "Yourname "],
-    "Account number": ["Account # —", "Account #", "Account##  "],
+    "Name": ["Your Name", "Yourname —", "Yourname _ ", "Yourname "],
+    "Account number": ["Account # —", "Account #", "Account##  ", "Account#"],
     "Last four digits of card": ["Last 4 digits of the card#", "Last 4 digits of thecard#"],
     "Transaction date": ["Transaction date", "Transactiondate"],
-    "Amount": ["Amount $"],
-    "Merchant name": ["Merchantname", "Merchant name "],
+    "Amount": ["Amount $", "Amount$"],
+    "Merchant name": ["Merchantname", "Merchant name ", "Merchant name"],
     "Transaction was not authorized": None,
     "My card was": None,
     "Date you lost your card": ["your card? card was missing?"],
@@ -46,12 +46,12 @@ field_mappings = {
     "Suspect name": ["Suspect name:", "Suspect Name"],
     "Date": ["Date: =", "Date:"],
     "Contact number": ["Contact number (during the hours of 8am-5pm PST): —", "Contact number (during the hours of 8am-5pm PST):", "Contact number (during the hours of 8am-5pm PST);"],
-    "Reason for dispute": ["Reason for Dispute"]
+    "Reason for dispute": ["Reason for Dispute", "Renson renee:\nDate"]
 }
 
 def extract_text_with_context(img, x, y, w, h):
     
-    above_region = img[max(0, y - h):y, x:x + w + 200]
+    above_region = img[max(0, y - h):y, x:x + w + 50]
     next_to_region = img[y:y + h, x + w:x + w + 200]
 
     if above_region.shape[1] != next_to_region.shape[1]:
@@ -70,7 +70,7 @@ def extract_text_with_context(img, x, y, w, h):
     return extracted_text
 
 
-def detect_checkboxes_with_text_and_context(img, page_num):
+def detect_checkboxes_with_text_and_context(img, page_num, is_three_page_doc):
     
     global FIELDS
 
@@ -84,18 +84,23 @@ def detect_checkboxes_with_text_and_context(img, page_num):
     contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     results = {}
 
+    if is_three_page_doc:
+        min_size, max_size, min_fill_ratio = 27, 63, 0.39
+    else:
+        min_size, max_size, min_fill_ratio = 30, 60, 0.3
+
     for contour in contours:
         x, y, w, h = cv2.boundingRect(contour)
-        if 30 < w < 60 and 30 < h < 60:  
+        if min_size < w < max_size and min_size < h < max_size:
             checkbox_region = binary[y:y + h, x:x + w]
             non_zero_pixels = cv2.countNonZero(checkbox_region)
             total_pixels = w * h
             fill_ratio = non_zero_pixels / total_pixels
-            state = "checked" if fill_ratio > 0.3 else "unchecked"
+            state = "checked" if fill_ratio > min_fill_ratio else "unchecked"
 
             extracted_text = extract_text_with_context(img, x, y, w, h)
 
-            if extracted_text:  
+            if extracted_text:
                 key = f"{state.capitalize()}: {extracted_text}"
                 results[key] = state
                 print(f"Text around checkbox at ({x}, {y}): {extracted_text}")
@@ -123,29 +128,20 @@ def update_fields_from_checkbox_results(results, page_num):
 def handle_page_1_checkboxes(key_text):
     
     global FIELDS
-    if "SECTION" in key_text:
+    if "SECTION" or "SECTION 1"in key_text:
         FIELDS["Transaction was not authorized"] = "Yes"
     else:
         FIELDS["Transaction was not authorized"] = "No"
 
-    if "IN MY" in key_text:
+    if "IN MY POSSESS" in key_text:
         FIELDS["My card was"] = "In My Possession"
-    elif "NOT" in key_text:
+    elif "NOT RECEIVED" in key_text:
         FIELDS["My card was"] = "Not Received"
     elif "STOLEN" in key_text:
         FIELDS["My card was"] = "Stolen"
     elif "LOST" in key_text:
         FIELDS["My card was"] = "Lost"
-
-    if "DO YOU" in key_text:
-        FIELDS["Do you know who made the transaction"] = "No"
-    elif "WHO MADE" in key_text:
-        FIELDS["Do you know who made the transaction"] = "Yes"
-    
-    if "HAVE YOU" in key_text:
-        FIELDS["Have you given permission to anyone to use your card"] = "No"
-    elif "PERMISSION TO" in key_text:
-        FIELDS["Have you given permission to anyone to use your card"] = "Yes"
+  
 
 
 def handle_page_2_checkboxes(key_text):
@@ -155,24 +151,34 @@ def handle_page_2_checkboxes(key_text):
         FIELDS["Have you filed police report"] = "No"
     else:
         FIELDS["Have you filed police report"] = "Yes"
+    
+    if "DO YOU" or "NO YES" in key_text:
+        FIELDS["Do you know who made the transaction"] = "No"
+    elif "WHO" in key_text:
+        FIELDS["Do you know who made the transaction"] = "Yes"
+    
+    if "HAVE YOU" in key_text:
+        FIELDS["Have you given permission to anyone to use your card"] = "No"
+    else:
+        FIELDS["Have you given permission to anyone to use your card"] = "Yes"
 
 
 def extract_text_from_pdf(pdf_path):
     
     text_by_page = {}
     with fitz.open(pdf_path) as pdf:
+        is_three_page_doc = len(pdf) == 3
+
         for page_num, page in enumerate(pdf):
             pix = page.get_pixmap(dpi=150)
             img = np.array(Image.open(io.BytesIO(pix.tobytes("png"))))
-            
-            
+
             page_text = pytesseract.image_to_string(img, config='--psm 6')
             text_by_page[page_num + 1] = page_text
+     
+            detect_checkboxes_with_text_and_context(img, page_num + 1, is_three_page_doc)
 
-            
-            detect_checkboxes_with_text_and_context(img, page_num + 1)
-
-    print(text_by_page)           
+    print(text_by_page)
     return text_by_page
 
 
@@ -241,7 +247,7 @@ def main(pdf_path, excel_filename):
 
 if __name__ == "__main__":
     
-    pdf_path = "PDF_Form_Reader\PDF_Reader/input folder/Completed Dispute Form 3.pdf (2).pdf"  
-    excel_filename = "PDF_Form_Reader\PDF_Reader\output folder\extracted_data_form3.xlsx"  
+    pdf_path = "PDF_Form_Reader\PDF_Reader\input folder\Dispute form new format.pdf (6).pdf"  
+    excel_filename = "PDF_Form_Reader\PDF_Reader\output folder\extracted_data_form41.xlsx"  
     extracted_data = main(pdf_path, excel_filename)
     print(f"Extracted Data:\n{extracted_data}")
