@@ -81,6 +81,7 @@ If the form has additional pages or layouts:
 2. **Text and Checkbox Extraction**
    - Extracts text using Tesseract OCR.
    - Detects and processes checkboxes based on contours and fills.
+   ![Checkbox Extraction Example][checkbox_recognition.png]
 3. **Field Matching**
    - Matches extracted data against predefined fields and mappings.
 4. **Output to Excel**
@@ -105,3 +106,6 @@ Feel free to contribute by:
 
 ## License
 This project is open-source and available under the [MIT License](LICENSE).
+
+
+[def]: checkbox_extraction.png

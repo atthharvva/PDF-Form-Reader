@@ -77,7 +77,7 @@ def detect_checkboxes_with_text(pdf_path):
             cv2.destroyAllWindows()
 
 
-pdf_path = "input folder/Completed Dispute Form 3.pdf (2).pdf"  
+pdf_path = "PDF_Form_Reader/PDF_Reader/input folder/Completed Dispute Form 3.pdf (2).pdf"  
 detect_checkboxes_with_text(pdf_path)
 
 
