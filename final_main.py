@@ -50,7 +50,20 @@ field_mappings = {
 }
 
 def extract_text_with_context(img, x, y, w, h):
+    """
+    Extracts text from the image using OCR, considering the surrounding context.
     
+    Args:
+        img (numpy.ndarray): Image from which text is to be extracted.
+        x (int): x-coordinate of the region to extract.
+        y (int): y-coordinate of the region to extract.
+        w (int): width of the region to extract.
+        h (int): height of the region to extract.
+        
+    Returns:
+        str: Extracted text from the specified region.
+    """
+
     above_region = img[max(0, y - h):y, x:x + w + 50]
     next_to_region = img[y:y + h, x + w:x + w + 200]
 
@@ -71,7 +84,18 @@ def extract_text_with_context(img, x, y, w, h):
 
 
 def detect_checkboxes_with_text_and_context(img, page_num, is_three_page_doc):
+    """
+    Detects checkboxes and extracts text with context from an image.
     
+    Args:
+        img (numpy.ndarray): Image to process for checkbox detection.
+        page_num (int): The page number for the document.
+        is_three_page_doc (bool): Flag indicating if the document has 3 pages.
+        
+    Returns:
+        dict: A dictionary of checkbox states and associated extracted text.
+    """
+
     global FIELDS
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -110,6 +134,13 @@ def detect_checkboxes_with_text_and_context(img, page_num, is_three_page_doc):
 
 
 def update_fields_from_checkbox_results(results, page_num):
+    """
+    Updates the global `FIELDS` dictionary based on checkbox results.
+    
+    Args:
+        results (dict): A dictionary containing checkbox states and associated text.
+        page_num (int): The page number to be processed.
+    """
     
     global FIELDS
 
@@ -126,7 +157,13 @@ def update_fields_from_checkbox_results(results, page_num):
 
 
 def handle_page_1_checkboxes(key_text):
+    """
+    Handles the checkbox state updates for page 1 based on extracted text.
     
+    Args:
+        key_text (str): The extracted text associated with a checkbox.
+    """
+
     global FIELDS
     if "SECTION" or "SECTION 1"in key_text:
         FIELDS["Transaction was not authorized"] = "Yes"
@@ -145,7 +182,13 @@ def handle_page_1_checkboxes(key_text):
 
 
 def handle_page_2_checkboxes(key_text):
+    """
+    Handles the checkbox state updates for page 2 based on extracted text.
     
+    Args:
+        key_text (str): The extracted text associated with a checkbox.
+    """
+
     global FIELDS
     if "NO" in key_text:
         FIELDS["Have you filed police report"] = "No"
@@ -164,7 +207,16 @@ def handle_page_2_checkboxes(key_text):
 
 
 def extract_text_from_pdf(pdf_path):
+    """
+    Extracts text from a PDF and detects checkboxes from the images of the PDF pages.
     
+    Args:
+        pdf_path (str): Path to the PDF file to be processed.
+        
+    Returns:
+        dict: A dictionary containing extracted text from each page of the PDF.
+    """
+
     text_by_page = {}
     with fitz.open(pdf_path) as pdf:
         is_three_page_doc = len(pdf) == 3
@@ -183,7 +235,13 @@ def extract_text_from_pdf(pdf_path):
 
 
 def find_field_values(text_by_page):
+    """
+    Finds the field values by searching for predefined mappings in the text extracted from each page.
     
+    Args:
+        text_by_page (dict): A dictionary containing extracted text from each page of the PDF.
+    """
+
     for page_num, page_text in text_by_page.items():
         print(f"Processing Page {page_num}")
         
@@ -226,6 +284,17 @@ def find_field_values(text_by_page):
 
 
 def save_to_excel(data, filename):
+    """
+    Saves the extracted data to an Excel file.
+
+    Args:
+        data (dict): A dictionary containing field names as keys and their extracted values as values.
+        output_file (str): The path to the Excel file where the data will be saved.
+
+    Returns:
+        None: The function writes the data to an Excel file and does not return any value.
+    """
+
     data = {
         "Field Name": list(data.keys()), 
         "Extracted Value": list(data.values())
@@ -239,7 +308,17 @@ def save_to_excel(data, filename):
 
 
 def main(pdf_path, excel_filename):
-    
+    """
+    Main function to process a PDF, extract text and checkbox information, and save the results to an Excel file.
+
+    Args:
+        pdf_path (str): Path to the PDF file to be processed.
+        output_file (str): The path to the Excel file where the extracted data will be saved.
+
+    Returns:
+        None: The function orchestrates the process and saves the extracted data to an Excel file.
+    """
+
     text_by_page = extract_text_from_pdf(pdf_path)
     find_field_values(text_by_page)
     save_to_excel(FIELDS, excel_filename)
