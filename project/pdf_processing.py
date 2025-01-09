@@ -10,14 +10,19 @@ def extract_text_from_pdf(pdf_path, FIELDS):
     text_by_page = {}
     with fitz.open(pdf_path) as pdf:
         is_three_page_doc = len(pdf) == 3
+        is_four_page_doc = len(pdf) == 4
 
         for page_num, page in enumerate(pdf):
             pix = page.get_pixmap(dpi=150)
             img = np.array(Image.open(io.BytesIO(pix.tobytes("png"))))
 
-            page_text = pytesseract.image_to_string(img, config='--psm 6')
+            if is_four_page_doc:
+                page_text = pytesseract.image_to_string(img, config='--psm 3')
+            else:
+                page_text = pytesseract.image_to_string(img, config='--psm 6')
+
             text_by_page[page_num + 1] = page_text
-            detect_checkboxes_with_text_and_context(img, page_num + 1, is_three_page_doc, FIELDS)
+            detect_checkboxes_with_text_and_context(img, page_num + 1, is_three_page_doc, is_four_page_doc, FIELDS)
 
     print(text_by_page)
     return text_by_page

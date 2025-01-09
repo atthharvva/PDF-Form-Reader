@@ -12,19 +12,19 @@ def main(pdf_path, excel_filename):
         "Merchant name": ["Merchantname", "Merchant name ", "Merchant name"],
         "Transaction was not authorized": None,
         "My card was": None,
-        "Date you lost your card": ["your card? card was missing?"],
-        "Time you lost your card": ["your card? card was missing?"],
-        "Date you realised card was stolen": ["your card? card was missing?"],
-        "Time you realised card was stolen": ["your card? card was missing?"],
+        "Date you lost your card": ["your card? card was missing?", "What DATE did you lose your card?\n\n"],
+        "Time you lost your card": ["your card? card was missing?", "What TIME did you lose your card?\n"],
+        "Date you realised card was stolen": ["your card? card was missing?", "What DATE did you realize your card was missing?\n"],
+        "Time you realised card was stolen": ["your card? card was missing?", "What TIME did you realize your card was missing?\n"],
         "Do you know who made the transaction": None,
         "Have you given permission to anyone to use your card": None,
-        "When was the last time you used your card": ["Date/Time:"],
+        "When was the last time you used your card": ["Date/Time:", "Time:"],
         "Last transaction amount": ["Amount: $"],
         "Where do you normally store your card": ["Where do you normally store your card? _", "Where do you normally store your card?"],
         "Where do you normally store your PIN": ["Where do you normally store your PIN?"],
         "Other items that were stolen": ["additional cards (if applicable):"],
         "Have you filed police report": None,
-        "Officer name": ["District/Officer name:"],
+        "Officer name": ["District/Officer name:", "District/OVicer name:\n\n"],
         "Report number": ["Report number:", "Report Number"],
         "Suspect name": ["Suspect name:", "Suspect Name"],
         "Date": ["Date: =", "Date:"],
@@ -38,7 +38,7 @@ def main(pdf_path, excel_filename):
     return FIELDS
 
 if __name__ == "__main__":
-    pdf_path = "PDF_Form_Reader\input folder\Completed Dispute Form 3.pdf (2).pdf"
-    excel_filename = "PDF_Form_Reader\output folder\extracted_data_form311.xlsx"
+    pdf_path = "PDF_Form_Reader/input folder/Dispute Form Example 1.pdf.pdf"
+    excel_filename = "PDF_Form_Reader/output folder/extracted_data_form111.xlsx"
     extracted_data = main(pdf_path, excel_filename)
     print(f"Extracted Data:\n{extracted_data}")

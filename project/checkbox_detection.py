@@ -30,7 +30,7 @@ FIELDS = {
     "Reason for dispute": None
 }
 
-def detect_checkboxes_with_text_and_context(img, page_num, is_three_page_doc, FIELDS):
+def detect_checkboxes_with_text_and_context(img, page_num, is_three_page_doc, is_four_page_doc, FIELDS):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
     binary = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 15, 3)
@@ -72,6 +72,8 @@ def update_fields_from_checkbox_results(results, page_num, FIELDS):
                 handle_page_1_checkboxes(key_text, FIELDS)
             elif page_num == 2:
                 handle_page_2_checkboxes(key_text, FIELDS)
+            elif page_num == 3:
+                handle_page_3_checkboxes(key_text, FIELDS)
 
     print(f"\nPage {page_num} Checkbox Results (State: [Text]):\n{results}\n")
 
@@ -105,3 +107,17 @@ def handle_page_2_checkboxes(key_text, FIELDS):
         FIELDS["Have you given permission to anyone to use your card"] = "No"
     else:
         FIELDS["Have you given permission to anyone to use your card"] = "Yes"
+
+def handle_page_3_checkboxes(key_text, FIELDS):
+    """
+    Handles the checkbox state updates for page 3 based on extracted text.
+    
+    Args:
+        key_text (str): The extracted text associated with a checkbox.
+    """
+
+    # global FIELDS
+    if "comp" in key_text:
+        FIELDS["Have you filed police report"] = "No"
+    else:
+        FIELDS["Have you filed police report"] = "Yes"

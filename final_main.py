@@ -29,24 +29,24 @@ field_mappings = {
     "Merchant name": ["Merchantname", "Merchant name ", "Merchant name"],
     "Transaction was not authorized": None,
     "My card was": None,
-    "Date you lost your card": ["your card? card was missing?"],
-    "Time you lost your card": ["your card? card was missing?"],
-    "Date you realised card was stolen": ["your card? card was missing?"],
-    "Time you realised card was stolen": ["your card? card was missing?"],
+    "Date you lost your card": ["your card? card was missing?", "What DATE did you lose your card?\n\n"],
+    "Time you lost your card": ["your card? card was missing?", "What TIME did you lose your card?\n\n"],
+    "Date you realised card was stolen": ["your card? card was missing?", "What DATE did you realize your card was missing?\n\n"],
+    "Time you realised card was stolen": ["your card? card was missing?", "What TIME did you realize your card was missing?\n\n"],
     "Do you know who made the transaction": None,
     "Have you given permission to anyone to use your card": None,
-    "When was the last time you used your card": ["Date/Time:"],
+    "When was the last time you used your card": ["Date/Time:", "Time:"],
     "Last transaction amount": ["Amount: $"],
     "Where do you normally store your card": ["Where do you normally store your card? _", "Where do you normally store your card?"],
     "Where do you normally store your PIN": ["Where do you normally store your PIN?"],
     "Other items that were stolen": ["additional cards (if applicable):"],
     "Have you filed police report": None,
-    "Officer name": ["District/Officer name:"],
+    "Officer name": ["District/Officer name:", "District/OVicer name:\n\n"],
     "Report number": ["Report number:", "Report Number"],
     "Suspect name": ["Suspect name:", "Suspect Name"],
     "Date": ["Date: =", "Date:"],
     "Contact number": ["Contact number (during the hours of 8am-5pm PST): —", "Contact number (during the hours of 8am-5pm PST):", "Contact number (during the hours of 8am-5pm PST);"],
-    "Reason for dispute": ["Reason for Dispute", "Renson renee:\nDate"]
+    "Reason for dispute": ["Reason for Dispute", "Renson renee:\nDate"],
 }
 
 def extract_text_with_context(img, x, y, w, h):
@@ -83,7 +83,7 @@ def extract_text_with_context(img, x, y, w, h):
     return extracted_text
 
 
-def detect_checkboxes_with_text_and_context(img, page_num, is_three_page_doc):
+def detect_checkboxes_with_text_and_context(img, page_num, is_three_page_doc, is_four_page_doc):
     """
     Detects checkboxes and extracts text with context from an image.
     
@@ -110,6 +110,8 @@ def detect_checkboxes_with_text_and_context(img, page_num, is_three_page_doc):
 
     if is_three_page_doc:
         min_size, max_size, min_fill_ratio = 27, 63, 0.39
+    elif is_four_page_doc:
+        min_size, max_size, min_fill_ratio = 27, 63, 0.42
     else:
         min_size, max_size, min_fill_ratio = 30, 60, 0.3
 
@@ -152,6 +154,8 @@ def update_fields_from_checkbox_results(results, page_num):
                 handle_page_1_checkboxes(key_text)
             elif page_num == 2:
                 handle_page_2_checkboxes(key_text)
+            elif page_num == 3:
+                handle_page_3_checkboxes(key_text)
 
     print(f"\nPage {page_num} Checkbox Results (State: [Text]):\n{results}\n")
 
@@ -176,7 +180,7 @@ def handle_page_1_checkboxes(key_text):
         FIELDS["My card was"] = "Not Received"
     elif "STOLEN" in key_text:
         FIELDS["My card was"] = "Stolen"
-    elif "LOST" in key_text:
+    elif "LOST" or "OST" in key_text:
         FIELDS["My card was"] = "Lost"
   
 
@@ -200,11 +204,25 @@ def handle_page_2_checkboxes(key_text):
     elif "WHO" in key_text:
         FIELDS["Do you know who made the transaction"] = "Yes"
     
-    if "HAVE YOU" in key_text:
+    if "HAVE" or "Have" in key_text:
         FIELDS["Have you given permission to anyone to use your card"] = "No"
     else:
         FIELDS["Have you given permission to anyone to use your card"] = "Yes"
 
+def handle_page_3_checkboxes(key_text):
+    """
+    Handles the checkbox state updates for page 3 based on extracted text.
+    
+    Args:
+        key_text (str): The extracted text associated with a checkbox.
+    """
+
+    global FIELDS
+    if "comp" in key_text:
+        FIELDS["Have you filed police report"] = "No"
+    else:
+        FIELDS["Have you filed police report"] = "Yes"
+    
 
 def extract_text_from_pdf(pdf_path):
     """
@@ -220,15 +238,20 @@ def extract_text_from_pdf(pdf_path):
     text_by_page = {}
     with fitz.open(pdf_path) as pdf:
         is_three_page_doc = len(pdf) == 3
+        is_four_page_doc = len(pdf) == 4
 
         for page_num, page in enumerate(pdf):
             pix = page.get_pixmap(dpi=150)
             img = np.array(Image.open(io.BytesIO(pix.tobytes("png"))))
 
-            page_text = pytesseract.image_to_string(img, config='--psm 6')
+            if is_four_page_doc:
+                page_text = pytesseract.image_to_string(img, config='--psm 3')
+            else:
+                page_text = pytesseract.image_to_string(img, config='--psm 6')
+            
             text_by_page[page_num + 1] = page_text
      
-            detect_checkboxes_with_text_and_context(img, page_num + 1, is_three_page_doc)
+            detect_checkboxes_with_text_and_context(img, page_num + 1, is_three_page_doc, is_four_page_doc)
 
     print(text_by_page)
     return text_by_page
@@ -258,28 +281,37 @@ def find_field_values(text_by_page):
                                 FIELDS[field] = right_text.strip()
                                 print(f"Found value for '{field}': {FIELDS[field]}")
     print(f"\nFinal Extracted FIELDS:\n{FIELDS}")
-    if "Date you lost your card" in FIELDS and FIELDS["Date you lost your card"]:
-        FIELDS["Date you lost your card"] = FIELDS["Date you lost your card"].split()[0]
+    # print(len(text_by_page))
+    if len(text_by_page) != 4:
+        if "Date you lost your card" in FIELDS and FIELDS["Date you lost your card"]:
+            FIELDS["Date you lost your card"] = FIELDS["Date you lost your card"].split()[0]
 
-    if "Time you lost your card" in FIELDS and FIELDS["Time you lost your card"]:
-        FIELDS["Time you lost your card"] = FIELDS["Time you lost your card"].split()[1]
+        if "Time you lost your card" in FIELDS and FIELDS["Time you lost your card"]:
+            FIELDS["Time you lost your card"] = FIELDS["Time you lost your card"].split()[1]
 
-    if "Date you realised card was stolen" in FIELDS and FIELDS["Date you realised card was stolen"]:
-        FIELDS["Date you realised card was stolen"] = FIELDS["Date you realised card was stolen"].split()[2]
+        if "Date you realised card was stolen" in FIELDS and FIELDS["Date you realised card was stolen"]:
+            FIELDS["Date you realised card was stolen"] = FIELDS["Date you realised card was stolen"].split()[2]
 
-    if "Time you realised card was stolen" in FIELDS and FIELDS["Time you realised card was stolen"]:
-        FIELDS["Time you realised card was stolen"] = FIELDS["Time you realised card was stolen"].split()[3]
+        if "Time you realised card was stolen" in FIELDS and FIELDS["Time you realised card was stolen"]:
+            FIELDS["Time you realised card was stolen"] = FIELDS["Time you realised card was stolen"].split()[3]
 
-    if "Reason for dispute" in FIELDS and FIELDS["Reason for dispute"]:
-        if FIELDS["Merchant name"] and FIELDS["Merchant name"].lower() in FIELDS["Reason for dispute"].lower():
-            x = FIELDS["Merchant name"]
-            index_after_x = FIELDS["Reason for dispute"].lower().find(x.lower()) + len(x)
-            FIELDS["Reason for dispute"] = FIELDS["Reason for dispute"][index_after_x:].strip()
+        if "Reason for dispute" in FIELDS and FIELDS["Reason for dispute"]:
+            if FIELDS["Merchant name"] and FIELDS["Merchant name"].lower() in FIELDS["Reason for dispute"].lower():
+                x = FIELDS["Merchant name"]
+                index_after_x = FIELDS["Reason for dispute"].lower().find(x.lower()) + len(x)
+                FIELDS["Reason for dispute"] = FIELDS["Reason for dispute"][index_after_x:].strip()
 
-    if "When was the last time you used your card" in FIELDS and FIELDS["When was the last time you used your card"]:
-        parts = FIELDS["When was the last time you used your card"].split()
-        if len(parts) >= 3:
-            FIELDS["When was the last time you used your card"] = ' '.join(parts[:3])
+        if "When was the last time you used your card" in FIELDS and FIELDS["When was the last time you used your card"]:
+            parts = FIELDS["When was the last time you used your card"].split()
+            if len(parts) >= 3:
+                FIELDS["When was the last time you used your card"] = ' '.join(parts[:3])
+    else:
+        if "Reason for dispute" in FIELDS and FIELDS["Reason for dispute"]:
+            if FIELDS["Merchant name"] and FIELDS["Merchant name"].lower() in FIELDS["Reason for dispute"].lower():
+                x = FIELDS["Merchant name"]
+                index_after_x = FIELDS["Reason for dispute"].lower().find(x.lower()) + len(x)
+                FIELDS["Reason for dispute"] = FIELDS["Reason for dispute"][index_after_x:].strip()
+
 
 
 
@@ -326,7 +358,7 @@ def main(pdf_path, excel_filename):
 
 if __name__ == "__main__":
     
-    pdf_path = "PDF_Form_Reader\PDF_Reader\input folder\Dispute form new format.pdf (6).pdf"  
-    excel_filename = "PDF_Form_Reader\PDF_Reader\output folder\extracted_data_form41.xlsx"  
+    pdf_path = "PDF_Form_Reader/input folder/Dispute form new format.pdf (6).pdf"  
+    excel_filename = "PDF_Form_Reader/output folder/extracted_data_form51.xlsx"  
     extracted_data = main(pdf_path, excel_filename)
-    print(f"Extracted Data:\n{extracted_data}")
+    print(f"Extracted Data:\n{extracted_data}") 

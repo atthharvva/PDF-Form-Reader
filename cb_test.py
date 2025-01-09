@@ -48,7 +48,7 @@ def detect_checkboxes_with_text(pdf_path):
                     fill_ratio = non_zero_pixels / total_pixels
 
                     
-                    state = "Checked" if fill_ratio > 0.39 else "Unchecked"
+                    state = "Checked" if fill_ratio > 0.42 else "Unchecked"   #0.39
 
                     
                     checkboxes.append((x, y, w, h, state))
@@ -71,13 +71,13 @@ def detect_checkboxes_with_text(pdf_path):
                 cv2.rectangle(img, (x, y), (x+w, y+h), color, 2)
 
             
-            resized_img = cv2.resize(img, (800, 1000))  
+            resized_img = cv2.resize(img, (800, 800))  
             cv2.imshow(f"Page {page_num + 1}", resized_img)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
 
 
-pdf_path = "PDF_Form_Reader\PDF_Reader\input folder\Completed Dispute Form 3.pdf (2).pdf"  
+pdf_path = "PDF_Form_Reader/input folder/New Dispute form Template check.pdf"  
 detect_checkboxes_with_text(pdf_path)
 
 
