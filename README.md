@@ -67,11 +67,14 @@ field_mappings = {
 ```
 
 ### Adjust Checkbox Detection
+- Place your `.pdf` files in `cb_test.py` and run it to verify whether the checkboxes in your files are getting recognized.
+- If your check-boxes arent getting recognized properly, try adjusting values `min_size`, `max_size`, `min_fill_ratio`. 
 - Update the logic in the `handle_page_1_checkboxes` and `handle_page_2_checkboxes` functions to account for new checkbox labels or states.
 
 ### PDF Page Handling
 If the form has additional pages or layouts:
 - Extend the `update_fields_from_checkbox_results` function to handle new page numbers or checkbox patterns.
+- If you want to utilize individual components of the process, u can access in the `Project` folder and integrate it into your own process.
 
 ---
 
